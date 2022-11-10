@@ -22,7 +22,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/GoogleCloudPlatform/professional-services/terraform-provider-ipam-autopilot/ipam/config"
+	"github.com/openx/terraform-provider-gcp-ipam-autopilot/ipam/config"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
