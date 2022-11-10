@@ -1,4 +1,4 @@
-module github.com/GoogleCloudPlatform/professional-services/terraform-provider-ipam-autopilot
+module github.com/openx/terraform-provider-gcp-ipam-autopilot
 
 go 1.14
 
