@@ -20,7 +20,6 @@ builds:
       - windows
       - linux
       - darwin
-      - darwin_arm64
     goarch:
       - amd64
       - "386"
