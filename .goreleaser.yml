@@ -26,7 +26,6 @@ builds:
       - "386"
       - arm
       - arm64
-      - darwin_arm64
     ignore:
       - goos: darwin
         goarch: "386"
