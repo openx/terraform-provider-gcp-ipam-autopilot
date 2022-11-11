@@ -1,6 +1,6 @@
 module github.com/openx/terraform-provider-gcp-ipam-autopilot
 
-go 1.14
+go 1.18
 
 require (
 	github.com/hashicorp/terraform-plugin-docs v0.13.0
