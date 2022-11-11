@@ -1,7 +1,8 @@
 .DS_Store
-terraform-provider-hashicups
+terraform-provider-gcp-ipam-autopilot
 bin
 vendor
+dist
 
 # Local .terraform directories
 **/.terraform/*
