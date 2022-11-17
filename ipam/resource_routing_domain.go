@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package resources
+package ipam
 
 import (
 	"bytes"
@@ -22,7 +22,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/openx/terraform-provider-gcp-ipam-autopilot/ipam/config"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -53,7 +52,7 @@ func ResourceRoutingDomain() *schema.Resource {
 }
 
 func routingDomainCreate(d *schema.ResourceData, meta interface{}) error {
-	config := meta.(config.Config)
+	config := meta.(Config)
 	vpcs := d.Get("vpcs").([]interface{})
 	name := d.Get("name").(string)
 	url := fmt.Sprintf("%s/domains", config.Url)
@@ -68,20 +67,19 @@ func routingDomainCreate(d *schema.ResourceData, meta interface{}) error {
 	}
 	fmt.Printf("%s", string(postBody))
 	responseBody := bytes.NewBuffer(postBody)
-	accessToken, err := getIdentityToken()
-	if err != nil {
-		return fmt.Errorf("unable to retrieve access token: %v", err)
-	}
+	accessToken := config.AccessToken
+
 	req, err := http.NewRequest("POST", url, responseBody)
 	if err != nil {
 		return fmt.Errorf("failed creating request: %v", err)
 	}
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", accessToken))
 	req.Header.Set("Content-Type", "application/json")
+
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		return fmt.Errorf("failed creating range: %v", err)
+		return fmt.Errorf("failed creating domain: %v", err)
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode == 200 {
@@ -109,18 +107,20 @@ func routingDomainCreate(d *schema.ResourceData, meta interface{}) error {
 }
 
 func routingDomainRead(d *schema.ResourceData, meta interface{}) error {
-	config := meta.(config.Config)
+	config := meta.(Config)
 	url := fmt.Sprintf("%s/domains/%s", config.Url, d.Id())
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return fmt.Errorf("failed creating request: %v", err)
 	}
-	accessToken, err := getIdentityToken()
+	accessToken := config.AccessToken
+
 	if err != nil {
 		return fmt.Errorf("unable to retrieve access token: %v", err)
 	}
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", accessToken))
+
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
@@ -157,7 +157,7 @@ func routingDomainRead(d *schema.ResourceData, meta interface{}) error {
 }
 
 func routingDomainDelete(d *schema.ResourceData, meta interface{}) error {
-	config := meta.(config.Config)
+	config := meta.(Config)
 
 	url := fmt.Sprintf("%s/domains/%s", config.Url, d.Id())
 
@@ -166,7 +166,7 @@ func routingDomainDelete(d *schema.ResourceData, meta interface{}) error {
 	if err != nil {
 		return fmt.Errorf("failed deleting routing domain request: %v", err)
 	}
-	accessToken, err := getIdentityToken()
+	accessToken := config.AccessToken
 	if err != nil {
 		return fmt.Errorf("unable to retrieve access token: %v", err)
 	}
@@ -188,7 +188,7 @@ func routingDomainDelete(d *schema.ResourceData, meta interface{}) error {
 }
 
 func routingDomainUpdate(d *schema.ResourceData, meta interface{}) error {
-	config := meta.(config.Config)
+	config := meta.(Config)
 	vpcs := d.Get("vpcs").([]interface{})
 	name := d.Get("name").(string)
 	url := fmt.Sprintf("%s/domains/%s", config.Url, d.Id())
@@ -203,7 +203,8 @@ func routingDomainUpdate(d *schema.ResourceData, meta interface{}) error {
 	}
 	fmt.Printf("%s", string(postBody))
 	responseBody := bytes.NewBuffer(postBody)
-	accessToken, err := getIdentityToken()
+	accessToken := config.AccessToken
+
 	if err != nil {
 		return fmt.Errorf("unable to retrieve access token: %v", err)
 	}

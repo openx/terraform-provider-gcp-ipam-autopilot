@@ -12,21 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package resources
+package ipam
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"os"
 
-	"github.com/openx/terraform-provider-gcp-ipam-autopilot/ipam/config"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"golang.org/x/oauth2/google"
-	"google.golang.org/api/idtoken"
 )
 
 func ResourceIpRange() *schema.Resource {
@@ -67,13 +62,14 @@ func ResourceIpRange() *schema.Resource {
 	}
 }
 func resourceCreate(d *schema.ResourceData, meta interface{}) error {
-	config := meta.(config.Config)
+	config := meta.(Config)
 	range_size := d.Get("range_size").(int)
 	parent := d.Get("parent").(string)
 	name := d.Get("name").(string)
 	domain := d.Get("domain").(string)
 	cidr := d.Get("cidr").(string)
 	url := fmt.Sprintf("%s/ranges", config.Url)
+	accessToken := config.AccessToken
 	var postBody []byte
 	var err error
 	if parent == "" {
@@ -100,7 +96,7 @@ func resourceCreate(d *schema.ResourceData, meta interface{}) error {
 	}
 	fmt.Printf("%s", string(postBody))
 	responseBody := bytes.NewBuffer(postBody)
-	accessToken, err := getIdentityToken()
+
 	if err != nil {
 		return fmt.Errorf("unable to retrieve access token: %v", err)
 	}
@@ -140,14 +136,15 @@ func resourceCreate(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceRead(d *schema.ResourceData, meta interface{}) error {
-	config := meta.(config.Config)
+	config := meta.(Config)
 	url := fmt.Sprintf("%s/ranges/%s", config.Url, d.Id())
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return fmt.Errorf("failed creating request: %v", err)
 	}
-	accessToken, err := getIdentityToken()
+	accessToken := config.AccessToken
+
 	if err != nil {
 		return fmt.Errorf("unable to retrieve access token: %v", err)
 	}
@@ -182,7 +179,7 @@ func resourceRead(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceDelete(d *schema.ResourceData, meta interface{}) error {
-	config := meta.(config.Config)
+	config := meta.(Config)
 
 	url := fmt.Sprintf("%s/ranges/%s", config.Url, d.Id())
 
@@ -191,7 +188,9 @@ func resourceDelete(d *schema.ResourceData, meta interface{}) error {
 	if err != nil {
 		return fmt.Errorf("failed creating release request: %v", err)
 	}
-	accessToken, err := getIdentityToken()
+
+	accessToken := config.AccessToken
+
 	if err != nil {
 		return fmt.Errorf("unable to retrieve access token: %v", err)
 	}
@@ -210,34 +209,4 @@ func resourceDelete(d *schema.ResourceData, meta interface{}) error {
 
 		return fmt.Errorf("failed releasing range status_code=%d, status=%s,body=%s", resp.StatusCode, resp.Status, string(body))
 	}
-}
-
-func getIdentityToken() (string, error) {
-	if os.Getenv("GCP_IDENTITY_TOKEN") != "" {
-		return os.Getenv("GCP_IDENTITY_TOKEN"), nil
-	}
-
-	ctx := context.Background()
-	audience := "http://ipam-autopilot.com"
-	ts, err := idtoken.NewTokenSource(ctx, audience)
-	if err != nil {
-		if err.Error() != `idtoken: credential must be service_account, found "authorized_user"` {
-			return "", err
-		}
-		gts, err := google.DefaultTokenSource(ctx)
-		if err != nil {
-			return "", err
-		}
-		token, err := gts.Token()
-		if err != nil {
-			return "", err
-		}
-		identityToken := token.Extra("id_token").(string)
-		return identityToken, nil
-	}
-	token, err := ts.Token()
-	if err != nil {
-		return "", err
-	}
-	return token.AccessToken, nil
 }

@@ -55,5 +55,5 @@ resource "ipam_ip_range" "sub1" {
 
 ### Authentication
 
-The provider uses application default credentials to authenticate against the backend. Alternatively you can directly provide an identity token via the GCP_IDENTITY_TOKEN environment variable to access the Cloud Run instance, the audience for the identity token should be the domain of the Cloud Run service.
+The provider uses application default credentials to authenticate against the backend. Alternatively you can set GOOGLE_CREDENTIALS variable to point or contain JSON account key or directly provide an identity token via the GCP_IDENTITY_TOKEN environment variable to access the Cloud Run instance, the audience for the identity token should be the domain of the Cloud Run service.
 
